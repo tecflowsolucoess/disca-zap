@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Disca Zap — números viram link</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root{
+    --bg: #14171A; --panel: #1D2227; --panel-2: #242A30; --line: #313A42;
+    --text: #ECEFF1; --text-dim: #9AA5AC; --amber: #FFB627; --amber-dim: #8A6A22;
+    --whats: #3DDC84; --bad: #FF6B5E;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{ background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; line-height: 1.5; min-height: 100vh; }
+  ::selection{ background: var(--amber); color:#14171A; }
+  .hidden{ display:none !important; }
+  .wrap{ max-width: 880px; margin: 0 auto; padding: 56px 24px 100px; }
+
+  .eyebrow{ font-family:'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--amber); display:flex; align-items:center; gap:10px; }
+  .eyebrow::before{ content:''; width:18px; height:1px; background: var(--amber); display:inline-block; }
+  h1{ font-family: 'Archivo', sans-serif; font-weight: 800; font-size: clamp(28px, 5vw, 42px); line-height: 1.08; letter-spacing: -0.01em; margin: 14px 0 12px; }
+  h1 span{ color: var(--whats); }
+  .sub{ color: var(--text-dim); font-size: 16px; max-width: 540px; margin: 0 0 36px; }
+
+  .panel{ background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 22px; margin-bottom: 20px; }
+  .panel-title{ font-family:'Archivo', sans-serif; font-weight:700; font-size: 14px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); margin: 0 0 14px; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+
+  .row{ display:flex; gap:14px; flex-wrap:wrap; }
+  .field{ flex: 1; min-width: 160px; }
+  .field label{ display:block; font-size: 12px; color: var(--text-dim); margin-bottom: 6px; }
+  .field input{ width:100%; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; color: var(--text); font-family: 'IBM Plex Mono', monospace; font-size: 14px; padding: 10px 12px; }
+  .field input:focus{ outline: 1px solid var(--amber); border-color: var(--amber); }
+
+  textarea{ width:100%; min-height: 160px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; color: var(--text); font-family: 'IBM Plex Mono', monospace; font-size: 14px; padding: 14px; resize: vertical; }
+  textarea:focus{ outline: 1px solid var(--amber); border-color: var(--amber); }
+  textarea::placeholder{ color: #5C666D; }
+
+  .hint{ font-size: 12.5px; color: var(--text-dim); margin-top: 10px; }
+  .error-text{ font-size: 12.5px; color: var(--bad); margin-top: 10px; min-height: 16px; }
+  .ok-text{ font-size: 12.5px; color: var(--whats); margin-top: 10px; min-height: 16px; }
+
+  .preview{ margin-top: 12px; background: var(--bg); border: 1px dashed var(--amber-dim); border-radius: 7px; padding: 10px 12px; font-size: 13px; color: var(--text); }
+  .preview-label{ display:block; font-family:'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--amber); margin-bottom: 4px; }
+
+  .actions{ display:flex; gap:12px; margin-top: 18px; flex-wrap: wrap; align-items:center; }
+  button{ font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 14px; border-radius: 7px; padding: 12px 20px; border: 1px solid transparent; cursor: pointer; transition: transform .08s ease, background .15s ease, border-color .15s ease; }
+  button:focus-visible{ outline: 2px solid var(--amber); outline-offset: 2px; }
+  button:active{ transform: scale(0.97); }
+  .btn-primary{ background: var(--amber); color: #1A1300; }
+  .btn-primary:hover{ background:#ffc24f; }
+  .btn-ghost{ background: transparent; border-color: var(--line); color: var(--text); }
+  .btn-ghost:hover{ border-color: var(--text-dim); }
+  .btn-ghost:disabled, .btn-primary:disabled{ opacity: .4; cursor: not-allowed; }
+  .btn-small{ padding: 7px 12px; font-size: 12.5px; }
+  .btn-link{ background:none; border:none; color: var(--amber); font-family:'IBM Plex Sans',sans-serif; font-weight:600; font-size:13px; padding: 0; cursor:pointer; }
+
+  #authView .panel{ max-width: 420px; margin: 0 auto; }
+  .auth-form .field{ margin-bottom: 14px; }
+  .switch-note{ text-align:center; font-size:13px; color:var(--text-dim); margin-top:14px; }
+
+  .appbar{ display:flex; align-items:center; justify-content:space-between; margin-bottom: 28px; flex-wrap:wrap; gap:12px; }
+  .who{ font-size:14px; color:var(--text-dim); }
+  .who b{ color:var(--text); }
+  .apptabs{ display:flex; gap:8px; margin-bottom: 22px; }
+  .apptabs button{ background: var(--panel); border:1px solid var(--line); color:var(--text-dim); padding: 9px 16px; font-size:13px; border-radius:7px; }
+  .apptabs button.active{ border-color: var(--amber); color: var(--amber); }
+
+  .summary{ display:flex; gap: 22px; font-family:'IBM Plex Mono', monospace; font-size: 13px; color: var(--text-dim); margin-bottom: 16px; flex-wrap: wrap; }
+  .summary b{ color: var(--text); font-size: 15px; }
+  .summary .ok b{ color: var(--whats); }
+  .summary .bad b{ color: var(--bad); }
+
+  .grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+  .card{ background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; display:flex; flex-direction: column; gap: 8px; }
+  .card.invalid{ border-color: rgba(255,107,94,0.4); background: rgba(255,107,94,0.06); }
+  .card-top{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .num{ font-family: 'IBM Plex Mono', monospace; font-size: 13.5px; color: var(--text); }
+  .num small{ display:block; color: var(--text-dim); font-size: 11px; margin-top: 2px; }
+  .card.invalid .num small{ color: var(--bad); }
+
+  .name-row{ display:flex; align-items:center; gap:6px; }
+  .name-row label{ font-size: 10.5px; color: var(--text-dim); font-family:'IBM Plex Mono', monospace; flex-shrink:0; }
+  .name-input{ flex:1; background: var(--bg); border: 1px solid var(--line); border-radius: 5px; color: var(--text); font-family: 'IBM Plex Sans', sans-serif; font-size: 13px; padding: 6px 8px; }
+  .name-input:focus{ outline: 1px solid var(--amber); border-color: var(--amber); }
+  .name-input.guessed{ color: var(--amber); }
+
+  .extra-info{ font-size: 11.5px; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .card-actions{ display:flex; gap:6px; flex-shrink:0; }
+  .icon-btn{ background: transparent; border: 1px solid var(--line); color: var(--text-dim); font-family:'IBM Plex Mono', monospace; font-size: 12px; padding: 7px 9px; border-radius: 6px; }
+  .icon-btn.go{ color: var(--whats); border-color: rgba(61,220,132,0.35); }
+  .icon-btn.go:hover{ background: rgba(61,220,132,0.1); }
+  .icon-btn:hover{ border-color: var(--text-dim); color: var(--text); }
+
+  .empty{ color: var(--text-dim); font-size: 14px; text-align: center; padding: 30px 10px; border: 1px dashed var(--line); border-radius: 8px; }
+
+  .save-row{ display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
+  .save-row select{ background: var(--bg); border: 1px solid var(--line); border-radius: 6px; color: var(--text); font-family:'IBM Plex Sans',sans-serif; font-size: 13px; padding: 10px 12px; }
+
+  .lists-grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+  .list-card{ background: var(--panel-2); border: 1px solid var(--line); border-radius: 9px; padding: 16px; display:flex; flex-direction:column; gap:6px; }
+  .list-card .lname{ font-family:'Archivo',sans-serif; font-weight:700; font-size: 15px; }
+  .list-card .lmeta{ font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--text-dim); }
+  .list-card .lactions{ display:flex; gap:8px; margin-top: 8px; }
+
+  .status-select{ background: var(--bg); border:1px solid var(--line); border-radius:5px; color: var(--text); font-family:'IBM Plex Mono',monospace; font-size:11.5px; padding:5px 6px; }
+  .status-select.st-novo{ color: var(--text-dim); }
+  .status-select.st-contatado{ color: var(--amber); }
+  .status-select.st-respondeu{ color: var(--whats); }
+  .status-select.st-agendado{ color: #6FB7FF; }
+  .status-select.st-sem_whatsapp{ color: var(--bad); }
+
+  .queue-progress{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--text-dim); text-align:center; margin-bottom:14px; }
+  .queue-contact{ text-align:center; padding: 10px 0 4px; }
+  .queue-name{ font-family:'Archivo',sans-serif; font-weight:800; font-size:22px; margin-bottom:4px; }
+  .queue-phone{ font-family:'IBM Plex Mono',monospace; color:var(--text-dim); margin-bottom:14px; }
+  .queue-msg{ background:var(--bg); border:1px dashed var(--amber-dim); border-radius:8px; padding:12px; font-size:13.5px; margin: 0 auto 18px; max-width:480px; text-align:left; }
+  .queue-actions{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+
+  footer{ color: #5C666D; font-size: 12px; text-align:center; margin-top: 50px; font-family:'IBM Plex Mono', monospace; }
+  .config-warning{
+    max-width:420px; margin: 0 auto 24px; background: rgba(255,107,94,0.08);
+    border: 1px solid rgba(255,107,94,0.4); border-radius: 8px; padding: 14px 16px;
+    font-size: 13px; color: var(--text);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div id="configWarning" class="config-warning hidden">
+    ⚠️ Esse arquivo ainda não foi configurado. Abra o HTML num editor de texto e preencha <code>SUPABASE_URL</code> e <code>SUPABASE_ANON_KEY</code> no topo do &lt;script&gt;, com os dados do seu projeto Supabase.
+  </div>
+
+  <!-- ============ AUTH VIEW ============ -->
+  <div id="authView">
+    <div class="eyebrow">esteira de prospecção · acesso por convite</div>
+    <h1>Cole a lista inteira.<br>Sai um <span>link clicável</span> com nome e tudo.</h1>
+    <p class="sub">Só entra quem foi convidado. Sem cadastro público.</p>
+
+    <div class="panel">
+      <div id="loginForm" class="auth-form">
+        <div class="field">
+          <label for="loginEmail">E-mail</label>
+          <input id="loginEmail" type="email" autocomplete="username" placeholder="seu@email.com">
+        </div>
+        <div class="field">
+          <label for="loginPass">Senha</label>
+          <input id="loginPass" type="password" autocomplete="current-password" placeholder="sua senha">
+        </div>
+        <button class="btn-primary" id="loginBtn" style="width:100%;">Entrar</button>
+        <p class="error-text" id="loginError"></p>
+        <p class="switch-note"><button class="btn-link" id="forgotBtn">Esqueci minha senha</button></p>
+        <p class="hint" style="text-align:center;">Ainda não recebeu convite? Peça pra quem administra esse app.</p>
+      </div>
+
+      <!-- Set password after invite/recovery link -->
+      <div id="setPasswordForm" class="auth-form hidden">
+        <p class="hint" style="margin-top:0;">Bem-vindo(a)! Defina sua senha pra acessar daqui pra frente.</p>
+        <div class="field">
+          <label for="newPass">Nova senha</label>
+          <input id="newPass" type="password" placeholder="mínimo 6 caracteres">
+        </div>
+        <button class="btn-primary" id="setPassBtn" style="width:100%;">Definir senha e entrar</button>
+        <p class="error-text" id="setPassError"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ APP VIEW ============ -->
+  <div id="appView" class="hidden">
+    <div class="appbar">
+      <div class="who">Olá, <b id="whoName"></b> 👋</div>
+      <button class="btn-ghost btn-small" id="logoutBtn">Sair</button>
+    </div>
+
+    <div class="apptabs">
+      <button id="tabNewBtn" class="active">Gerar novos links</button>
+      <button id="tabListsBtn">Minhas listas</button>
+    </div>
+
+    <!-- ---- NEW LIST / GENERATOR TAB ---- -->
+    <div id="newView">
+      <div class="panel">
+        <div class="panel-title">1. Configuração</div>
+        <div class="row">
+          <div class="field" style="max-width:140px;">
+            <label for="ddi">DDI padrão</label>
+            <input id="ddi" value="55" inputmode="numeric">
+          </div>
+          <div class="field">
+            <label for="msg">Mensagem com direcionamento (opcional)</label>
+            <input id="msg" value="Oi {nome}, aqui quem fala é Isa, da TechFlow! Vi o contato de vocês e gostaria de apresentar uma novidade rapidinho, pode ser?">
+          </div>
+        </div>
+        <p class="hint">Use <code>{nome}</code> em qualquer ponto — na hora de abrir ou copiar o link, troca pelo nome daquele card.</p>
+        <div class="preview hidden" id="msgPreview">
+          <span class="preview-label">prévia ao vivo</span>
+          <span id="msgPreviewText"></span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">2. Cole a lista</div>
+        <textarea id="input" placeholder="Uma linha por contato. Nome + telefone + email + endereço juntos (separado por vírgula, ponto-e-vírgula ou tab) ou só o telefone.&#10;&#10;Exemplo:&#10;Clínica Bella Estética; (81) 99876-5432; contato@bellaestetica.com.br; Boa Viagem, Recife"></textarea>
+        <div class="actions">
+          <button class="btn-primary" id="gerar">Gerar links</button>
+          <button class="btn-ghost" id="limpar">Limpar</button>
+          <button class="btn-ghost" id="importBtn">📁 Importar arquivo (.csv/.txt)</button>
+          <input type="file" id="fileImport" accept=".csv,.txt,.tsv" class="hidden">
+        </div>
+      </div>
+
+      <div class="panel hidden" id="resultPanel">
+        <div class="panel-title">3. Resultado</div>
+        <div class="summary">
+          <span class="ok">prontos: <b id="countOk">0</b></span>
+          <span class="bad">suspeitos: <b id="countBad">0</b></span>
+        </div>
+        <div class="grid" id="grid"></div>
+
+        <div class="save-row">
+          <div class="field" style="min-width:200px;">
+            <label for="saveTarget">Salvar nessa lista</label>
+            <select id="saveTarget"><option value="__new__">+ criar nova lista</option></select>
+          </div>
+          <div class="field hidden" id="newListNameWrap" style="min-width:200px;">
+            <label for="newListName">Nome da nova lista</label>
+            <input id="newListName" placeholder="Ex: Clínicas de Estética — Recife">
+          </div>
+          <button class="btn-primary" id="saveListBtn">💾 Salvar lista</button>
+        </div>
+        <p class="hint" id="saveStatus"></p>
+      </div>
+    </div>
+
+    <!-- ---- SAVED LISTS TAB ---- -->
+    <div id="listsView" class="hidden">
+      <div class="panel">
+        <div class="panel-title">Minhas listas</div>
+        <div class="lists-grid" id="listsGrid"></div>
+      </div>
+
+      <div class="panel hidden" id="openedListPanel">
+        <div class="panel-title">
+          <span id="openedListName"></span>
+          <button class="btn-ghost btn-small" id="closeOpenedList">fechar</button>
+        </div>
+        <div class="field" style="margin-bottom:14px;">
+          <label for="listTemplate">Mensagem padrão desta lista (use {nome})</label>
+          <input id="listTemplate" placeholder="Ex: Oi {nome}, aqui é a Isa da TechFlow...">
+        </div>
+        <div class="actions" style="margin-top:0;margin-bottom:18px;">
+          <button class="btn-ghost btn-small" id="saveTemplateBtn">💾 salvar mensagem da lista</button>
+          <button class="btn-primary btn-small" id="startQueueBtn">🚀 Modo fila</button>
+        </div>
+        <div class="summary" id="statusSummary"></div>
+        <div class="grid" id="openedGrid"></div>
+      </div>
+
+      <div class="panel hidden" id="queuePanel">
+        <div class="panel-title">
+          <span>Modo fila — <span id="queueListName"></span></span>
+          <button class="btn-ghost btn-small" id="closeQueue">fechar</button>
+        </div>
+        <div class="queue-progress" id="queueProgress"></div>
+        <div class="queue-contact" id="queueContact"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>feito pra quem garimpa número um por um — cola, gera, clica, guarda.</footer>
+</div>
+
+<script>
+/* =========================================================
+   CONFIGURAÇÃO — preencha com os dados do seu projeto Supabase
+   (Project Settings > API)
+========================================================= */
+const SUPABASE_URL = 'https://rwalkwttbgalqrdbmsys.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ3YWxrd3R0YmdhbHFyZGJtc3lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxNDU4ODQsImV4cCI6MjA5NzcyMTg4NH0.Wg9tasyHafBX8r4dQobgq8h5L4ZJmXbfsUv2FU3gaFU';
+/* ========================================================= */
+
+const $ = (id) => document.getElementById(id);
+const STATUS_OPTIONS = [
+  { value:'novo', label:'novo' },
+  { value:'contatado', label:'contatado' },
+  { value:'respondeu', label:'respondeu' },
+  { value:'agendado', label:'agendado' },
+  { value:'sem_whatsapp', label:'sem WhatsApp' },
+];
+function escapeHtml(s){ const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+if(SUPABASE_URL.includes('COLE_AQUI') || SUPABASE_ANON_KEY.includes('COLE_AQUI')){
+  $('configWarning').classList.remove('hidden');
+}
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* ============ AUTH ============ */
+
+let currentUser = null;
+let cameFromAuthLink = window.location.hash.includes('access_token');
+
+function traduzErroAuth(msg){
+  if(/invalid login credentials/i.test(msg)) return 'E-mail ou senha incorretos.';
+  if(/email not confirmed/i.test(msg)) return 'Confirme o convite recebido por e-mail antes de entrar.';
+  return msg;
+}
+
+function enterApp(user){
+  currentUser = user;
+  $('whoName').textContent = user.user_metadata?.full_name || user.email;
+  $('authView').classList.add('hidden');
+  $('appView').classList.remove('hidden');
+  refreshListOptions();
+  refreshListsGrid();
+}
+
+function backToAuth(){
+  currentUser = null;
+  $('appView').classList.add('hidden');
+  $('authView').classList.remove('hidden');
+  $('loginForm').classList.remove('hidden');
+  $('setPasswordForm').classList.add('hidden');
+  $('loginPass').value = '';
+}
+
+$('loginBtn').addEventListener('click', async () => {
+  $('loginError').textContent = '';
+  const email = $('loginEmail').value.trim();
+  const password = $('loginPass').value;
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  if(error){ $('loginError').textContent = traduzErroAuth(error.message); return; }
+  enterApp(data.user);
+});
+
+$('forgotBtn').addEventListener('click', async () => {
+  const email = $('loginEmail').value.trim();
+  if(!email){ $('loginError').textContent = 'Digite seu e-mail no campo acima primeiro.'; return; }
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.href.split('#')[0] });
+  $('loginError').textContent = error ? error.message : 'Te mandamos um e-mail com o link pra redefinir a senha.';
+});
+
+$('setPassBtn').addEventListener('click', async () => {
+  $('setPassError').textContent = '';
+  const pass = $('newPass').value;
+  if(pass.length < 6){ $('setPassError').textContent = 'Mínimo 6 caracteres.'; return; }
+  const { error } = await sb.auth.updateUser({ password: pass });
+  if(error){ $('setPassError').textContent = error.message; return; }
+  const { data: { user } } = await sb.auth.getUser();
+  enterApp(user);
+});
+
+$('logoutBtn').addEventListener('click', async () => {
+  await sb.auth.signOut();
+  backToAuth();
+});
+
+sb.auth.onAuthStateChange((event, session) => {
+  if(session && session.user && cameFromAuthLink){
+    cameFromAuthLink = false;
+    $('loginForm').classList.add('hidden');
+    $('setPasswordForm').classList.remove('hidden');
+  }
+});
+
+(async function bootAuth(){
+  const { data: { session } } = await sb.auth.getSession();
+  if(session && session.user && !cameFromAuthLink){
+    enterApp(session.user);
+  }
+})();
+
+/* ============ app tabs ============ */
+$('tabNewBtn').addEventListener('click', () => switchAppTab('new'));
+$('tabListsBtn').addEventListener('click', () => { switchAppTab('lists'); refreshListsGrid(); });
+function switchAppTab(which){
+  const isNew = which === 'new';
+  $('tabNewBtn').classList.toggle('active', isNew);
+  $('tabListsBtn').classList.toggle('active', !isNew);
+  $('newView').classList.toggle('hidden', !isNew);
+  $('listsView').classList.toggle('hidden', isNew);
+}
+
+/* ============ PHONE PARSING ============ */
+
+function splitFields(line){
+  if(line.includes('\t')) return line.split('\t').map(s => s.trim()).filter(Boolean);
+  if(line.includes(';')) return line.split(';').map(s => s.trim()).filter(Boolean);
+  if((line.match(/,/g) || []).length >= 1) return line.split(',').map(s => s.trim()).filter(Boolean);
+  return [line.trim()];
+}
+function digitsOf(s){ return (s || '').replace(/\D/g, ''); }
+function looksLikePhoneField(field){
+  const d = digitsOf(field);
+  if(d.length < 8 || d.length > 14) return false;
+  const nonDigitNonFormat = field.replace(/[\d\s()+\-./]/g, '');
+  return nonDigitNonFormat.length === 0;
+}
+function detectRecord(fields){
+  let phoneField = null, emailField = null, nameField = null;
+  const rest = [];
+  for(const f of fields){ if(!emailField && f.includes('@')){ emailField = f; continue; } }
+  let bestDigits = 0;
+  for(const f of fields){
+    if(f === emailField) continue;
+    if(looksLikePhoneField(f)){ const d = digitsOf(f).length; if(d > bestDigits){ bestDigits = d; phoneField = f; } }
+  }
+  for(const f of fields){
+    if(f === phoneField || f === emailField) continue;
+    if(!nameField && /[a-zA-ZÀ-ÿ]{2,}/.test(f)){ nameField = f; continue; }
+    rest.push(f);
+  }
+  return { phoneRaw: phoneField || (fields.length === 1 ? fields[0] : ''), name: nameField || '', email: emailField || '', extra: rest.join(' • ') };
+}
+function parseLines(raw, defaultDDI){
+  const lines = raw.split(/\n+/).map(l => l.trim()).filter(Boolean);
+  return lines.map(line => {
+    const fields = splitFields(line);
+    const rec = detectRecord(fields);
+    let digits = digitsOf(rec.phoneRaw);
+    if(!digits) return { ...rec, original: line, digits:'', valid:false, reason:'sem telefone reconhecível' };
+    if(digits.length <= 11 && !digits.startsWith(defaultDDI)){ digits = digits.replace(/^0+/, ''); digits = defaultDDI + digits; }
+    const valid = digits.length >= 12 && digits.length <= 13;
+    const reason = valid ? '' : (digits.length < 12 ? 'poucos dígitos' : 'dígitos demais');
+    return { ...rec, original: line, digits, valid, reason };
+  });
+}
+function formatDisplay(digits){
+  if(digits.length === 13) return `+${digits.slice(0,2)} (${digits.slice(2,4)}) ${digits.slice(4,9)}-${digits.slice(9)}`;
+  if(digits.length === 12) return `+${digits.slice(0,2)} (${digits.slice(2,4)}) ${digits.slice(4,8)}-${digits.slice(8)}`;
+  return digits;
+}
+function messageFor(template, name){
+  if(!template) return '';
+  if(name) return template.split(/\{nome\}/gi).join(name);
+  return template.split(/\{nome\}/gi).join('').replace(/\s{2,}/g, ' ').replace(/\s+([,.!?])/g, '$1').trim();
+}
+function buildLink(digits, msg){ const base = `https://wa.me/${digits}`; return msg ? `${base}?text=${encodeURIComponent(msg)}` : base; }
+
+/* ============ RENDER GRID ============ */
+
+function renderGrid(records, gridEl, opts){
+  opts = opts || {};
+  gridEl.innerHTML = '';
+  let ok = 0, bad = 0;
+
+  records.forEach((p, idx) => {
+    const card = document.createElement('div');
+    card.className = 'card' + (p.valid ? '' : ' invalid');
+    const top = document.createElement('div');
+    top.className = 'card-top';
+    const numDiv = document.createElement('div');
+    numDiv.className = 'num';
+    if(p.valid){ numDiv.innerHTML = `${formatDisplay(p.digits)}<small>${p.email || 'sem email identificado'}</small>`; }
+    else { numDiv.innerHTML = `${p.original || ''}<small>${p.reason || ''}</small>`; }
+    top.appendChild(numDiv);
+
+    const actions = document.createElement('div');
+    actions.className = 'card-actions';
+    const nameInputId = `${opts.prefix || 'n'}-name-${idx}`;
+    const statusInputId = `${opts.prefix || 'n'}-status-${idx}`;
+
+    if(p.valid){
+      ok++;
+      const goBtn = document.createElement('button');
+      goBtn.className = 'icon-btn go';
+      goBtn.textContent = 'abrir ↗';
+      goBtn.addEventListener('click', () => {
+        const name = $(nameInputId).value.trim();
+        const msg = messageFor(opts.getMessage ? opts.getMessage() : '', name);
+        window.open(buildLink(p.digits, msg), '_blank', 'noopener,noreferrer');
+        if(opts.showStatus){
+          const sel = $(statusInputId);
+          if(sel && sel.value === 'novo'){
+            sel.value = 'contatado'; sel.className = 'status-select st-contatado';
+            if(opts.onStatusChange) opts.onStatusChange(p.id, 'contatado');
+          }
+        }
+      });
+      actions.appendChild(goBtn);
+
+      const copyBtn = document.createElement('button');
+      copyBtn.className = 'icon-btn';
+      copyBtn.textContent = 'copiar';
+      copyBtn.addEventListener('click', () => {
+        const name = $(nameInputId).value.trim();
+        const msg = messageFor(opts.getMessage ? opts.getMessage() : '', name);
+        navigator.clipboard.writeText(buildLink(p.digits, msg));
+        copyBtn.textContent = 'copiado!'; setTimeout(() => copyBtn.textContent = 'copiar', 1200);
+      });
+      actions.appendChild(copyBtn);
+    } else { bad++; }
+
+    top.appendChild(actions);
+    card.appendChild(top);
+
+    if(p.valid){
+      const nameRow = document.createElement('div');
+      nameRow.className = 'name-row';
+      const label = document.createElement('label');
+      label.textContent = 'nome:'; label.setAttribute('for', nameInputId);
+      const nameInput = document.createElement('input');
+      nameInput.className = 'name-input' + (p.name ? ' guessed' : '');
+      nameInput.id = nameInputId; nameInput.value = p.name || '';
+      nameInput.placeholder = 'sem nome identificado — digite aqui';
+      nameInput.addEventListener('input', () => nameInput.classList.remove('guessed'));
+      nameRow.appendChild(label); nameRow.appendChild(nameInput);
+      card.appendChild(nameRow);
+
+      if(p.extra){
+        const extra = document.createElement('div');
+        extra.className = 'extra-info'; extra.textContent = p.extra; extra.title = p.extra;
+        card.appendChild(extra);
+      }
+
+      if(opts.showStatus){
+        const statusRow = document.createElement('div');
+        statusRow.className = 'name-row';
+        const sLabel = document.createElement('label');
+        sLabel.textContent = 'status:'; sLabel.setAttribute('for', statusInputId);
+        const statusSelect = document.createElement('select');
+        statusSelect.id = statusInputId;
+        statusSelect.className = 'status-select st-' + (p.status || 'novo');
+        STATUS_OPTIONS.forEach(s => {
+          const o = document.createElement('option');
+          o.value = s.value; o.textContent = s.label;
+          if((p.status || 'novo') === s.value) o.selected = true;
+          statusSelect.appendChild(o);
+        });
+        statusSelect.addEventListener('change', () => {
+          statusSelect.className = 'status-select st-' + statusSelect.value;
+          if(opts.onStatusChange) opts.onStatusChange(p.id, statusSelect.value);
+        });
+        statusRow.appendChild(sLabel); statusRow.appendChild(statusSelect);
+        card.appendChild(statusRow);
+      }
+    }
+    gridEl.appendChild(card);
+  });
+  return { ok, bad };
+}
+
+/* ============ GENERATOR TAB ============ */
+
+let parsedRecords = [];
+
+function updatePreview(){
+  const template = $('msg').value.trim();
+  const previewBox = $('msgPreview');
+  if(!template){ previewBox.classList.add('hidden'); return; }
+  const sampleName = (parsedRecords.find(p => p.valid && p.name) || {}).name || 'Clínica Modelo';
+  $('msgPreviewText').textContent = messageFor(template, sampleName);
+  previewBox.classList.remove('hidden');
+}
+$('msg').addEventListener('input', updatePreview);
+updatePreview();
+
+$('gerar').addEventListener('click', () => {
+  const raw = $('input').value;
+  const ddi = $('ddi').value.replace(/\D/g,'') || '55';
+  parsedRecords = parseLines(raw, ddi);
+  $('resultPanel').classList.remove('hidden');
+  if(parsedRecords.length === 0){
+    $('grid').innerHTML = '<div class="empty">Cole alguns contatos acima e clique em "Gerar links".</div>';
+    $('countOk').textContent = '0'; $('countBad').textContent = '0';
+    return;
+  }
+  const { ok, bad } = renderGrid(parsedRecords, $('grid'), { prefix:'new', getMessage: () => $('msg').value.trim() });
+  $('countOk').textContent = ok; $('countBad').textContent = bad;
+  updatePreview();
+  $('saveStatus').textContent = '';
+});
+
+$('limpar').addEventListener('click', () => {
+  $('input').value = ''; $('resultPanel').classList.add('hidden'); parsedRecords = [];
+});
+
+$('importBtn').addEventListener('click', () => $('fileImport').click());
+$('fileImport').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const text = (reader.result || '').toString().trim();
+    if(!text) return;
+    const existing = $('input').value.trim();
+    $('input').value = existing ? `${existing}\n${text}` : text;
+  };
+  reader.readAsText(file, 'UTF-8');
+  e.target.value = '';
+});
+
+/* ============ LISTS (Supabase) ============ */
+
+function snapshotForSave(records, nameInputPrefix){
+  const seen = new Set();
+  const result = [];
+  records.filter(p => p.valid).forEach((p, idx) => {
+    if(seen.has(p.digits)) return; // duplicata dentro da própria lista colada
+    seen.add(p.digits);
+    const el = $(`${nameInputPrefix}-name-${idx}`);
+    const name = el ? el.value.trim() : p.name;
+    result.push({ name, digits: p.digits, email: p.email, extra: p.extra });
+  });
+  return result;
+}
+
+async function getLists(){
+  const { data, error } = await sb.from('lists').select('*, contacts(count)').order('created_at', { ascending:false });
+  if(error){ console.error(error); return []; }
+  return data.map(l => ({ ...l, count: l.contacts?.[0]?.count ?? 0 }));
+}
+async function getListWithContacts(id){
+  const { data: list, error: e1 } = await sb.from('lists').select('*').eq('id', id).single();
+  if(e1 || !list) return null;
+  const { data: contacts } = await sb.from('contacts').select('*').eq('list_id', id).order('created_at');
+  return { ...list, contacts: contacts || [] };
+}
+async function createList(name, template, contacts){
+  const { data: list, error } = await sb.from('lists').insert({ name, template }).select().single();
+  if(error) throw new Error('Erro ao criar lista: ' + error.message);
+  // dedup dentro do lote antes de inserir
+  const unique = contacts.filter((c, i, arr) => arr.findIndex(x => x.digits === c.digits) === i);
+  if(unique.length){
+    const rows = unique.map(c => ({ list_id: list.id, name:c.name, digits:c.digits, email:c.email, extra:c.extra, status:'novo' }));
+    const { error: e2 } = await sb.from('contacts').insert(rows);
+    if(e2) throw new Error('Lista criada, mas erro ao salvar contatos: ' + e2.message);
+  }
+  return { list, saved: unique.length, skipped: contacts.length - unique.length };
+}
+async function appendToList(listId, contacts){
+  const { data: existing } = await sb.from('contacts').select('digits').eq('list_id', listId);
+  const existingDigits = new Set((existing || []).map(c => c.digits));
+  // dedup dentro do lote + contra o que já está na lista
+  const seen = new Set();
+  const newOnes = contacts.filter(c => {
+    if(existingDigits.has(c.digits) || seen.has(c.digits)) return false;
+    seen.add(c.digits);
+    return true;
+  });
+  if(newOnes.length){
+    const rows = newOnes.map(c => ({ list_id: listId, name:c.name, digits:c.digits, email:c.email, extra:c.extra, status:'novo' }));
+    const { error } = await sb.from('contacts').insert(rows);
+    if(error) throw new Error('Erro ao adicionar contatos: ' + error.message);
+  }
+  return { saved: newOnes.length, skipped: contacts.length - newOnes.length };
+}
+async function deleteListDb(id){ await sb.from('lists').delete().eq('id', id); }
+async function updateListTemplate(id, template){ await sb.from('lists').update({ template }).eq('id', id); }
+async function updateContactStatusDb(contactId, status){ await sb.from('contacts').update({ status }).eq('id', contactId); }
+
+async function refreshListOptions(){
+  const lists = await getLists();
+  const sel = $('saveTarget');
+  sel.innerHTML = '<option value="__new__">+ criar nova lista</option>';
+  lists.forEach(l => {
+    const opt = document.createElement('option');
+    opt.value = l.id; opt.textContent = `${l.name} (${l.count})`;
+    sel.appendChild(opt);
+  });
+}
+$('saveTarget').addEventListener('change', () => {
+  $('newListNameWrap').classList.toggle('hidden', $('saveTarget').value !== '__new__');
+});
+
+$('saveListBtn').addEventListener('click', async () => {
+  if(parsedRecords.filter(p => p.valid).length === 0){ $('saveStatus').textContent = 'Gere links válidos antes de salvar.'; return; }
+  const target = $('saveTarget').value;
+  const contacts = snapshotForSave(parsedRecords, 'new');
+  $('saveStatus').textContent = 'Salvando...';
+
+  function feedbackMsg(saved, skipped){
+    const partes = [`${saved} contato(s) salvo(s)`];
+    if(skipped > 0) partes.push(`${skipped} duplicata(s) ignorada(s)`);
+    return partes.join(' · ');
+  }
+
+  try{
+    if(target === '__new__'){
+      const name = $('newListName').value.trim();
+      if(!name){ $('saveStatus').textContent = 'Dá um nome pra essa lista (ex: Clínicas de Estética).'; return; }
+      const { saved, skipped } = await createList(name, $('msg').value.trim(), contacts);
+      $('saveStatus').textContent = `Lista "${name}" criada — ${feedbackMsg(saved, skipped)}.`;
+      $('newListName').value = '';
+    } else {
+      const { saved, skipped } = await appendToList(target, contacts);
+      $('saveStatus').textContent = feedbackMsg(saved, skipped) + (skipped > 0 ? ' (já existiam nessa lista)' : '');
+    }
+    await refreshListOptions();
+  }catch(e){
+    $('saveStatus').textContent = e.message || 'Erro ao salvar.';
+  }
+});
+
+/* ---- saved lists tab ---- */
+
+let currentOpenedListId = null;
+
+async function refreshListsGrid(){
+  const lists = await getLists();
+  const grid = $('listsGrid');
+  grid.innerHTML = '';
+  $('openedListPanel').classList.add('hidden');
+  $('queuePanel').classList.add('hidden');
+
+  if(lists.length === 0){
+    grid.innerHTML = '<div class="empty">Nenhuma lista salva ainda. Gere links na outra aba e clique em "Salvar lista".</div>';
+    return;
+  }
+  lists.forEach(l => {
+    const card = document.createElement('div');
+    card.className = 'list-card';
+    const date = new Date(l.created_at).toLocaleDateString('pt-BR');
+    card.innerHTML = `
+      <div class="lname">${escapeHtml(l.name)}</div>
+      <div class="lmeta">${l.count} contato(s) · criada em ${date}</div>
+      <div class="lactions">
+        <button class="btn-ghost btn-small" data-action="open">abrir</button>
+        <button class="btn-ghost btn-small" data-action="delete">excluir</button>
+      </div>
+    `;
+    card.querySelector('[data-action="open"]').addEventListener('click', () => openList(l.id));
+    card.querySelector('[data-action="delete"]').addEventListener('click', () => deleteListUi(l.id));
+    grid.appendChild(card);
+  });
+}
+
+function renderStatusSummary(contacts){
+  const counts = {};
+  STATUS_OPTIONS.forEach(s => counts[s.value] = 0);
+  contacts.forEach(c => { const s = c.status || 'novo'; counts[s] = (counts[s] || 0) + 1; });
+  $('statusSummary').innerHTML = STATUS_OPTIONS.map(s => `<span>${s.label}: <b>${counts[s.value]}</b></span>`).join('');
+}
+
+async function openList(id){
+  const list = await getListWithContacts(id);
+  if(!list) return;
+  currentOpenedListId = id;
+  $('openedListName').textContent = list.name;
+  $('listTemplate').value = list.template || $('msg').value;
+  renderStatusSummary(list.contacts);
+  const records = list.contacts.map(c => ({ valid:true, id:c.id, digits:c.digits, name:c.name, email:c.email, extra:c.extra, status:c.status || 'novo' }));
+  renderGrid(records, $('openedGrid'), {
+    prefix:'open', showStatus: true,
+    getMessage: () => $('listTemplate').value,
+    onStatusChange: async (contactId, status) => {
+      await updateContactStatusDb(contactId, status);
+      const fresh = await getListWithContacts(id);
+      renderStatusSummary(fresh.contacts);
+    }
+  });
+  $('openedListPanel').classList.remove('hidden');
+  $('queuePanel').classList.add('hidden');
+  $('openedListPanel').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+$('closeOpenedList').addEventListener('click', () => $('openedListPanel').classList.add('hidden'));
+
+$('saveTemplateBtn').addEventListener('click', async () => {
+  if(!currentOpenedListId) return;
+  await updateListTemplate(currentOpenedListId, $('listTemplate').value.trim());
+  const btn = $('saveTemplateBtn');
+  const original = btn.textContent;
+  btn.textContent = 'salvo!';
+  setTimeout(() => btn.textContent = original, 1200);
+});
+
+async function deleteListUi(id){
+  await deleteListDb(id);
+  refreshListsGrid();
+}
+
+/* ---- queue mode ---- */
+
+let queueContacts = [];
+let queueIndex = 0;
+
+$('startQueueBtn').addEventListener('click', async () => {
+  if(!currentOpenedListId) return;
+  const list = await getListWithContacts(currentOpenedListId);
+  if(!list) return;
+  queueContacts = list.contacts.filter(c => (c.status || 'novo') === 'novo');
+  queueIndex = 0;
+  $('queueListName').textContent = list.name;
+  $('queuePanel').classList.remove('hidden');
+  $('queuePanel').scrollIntoView({ behavior:'smooth', block:'start' });
+  renderQueueStep();
+});
+
+$('closeQueue').addEventListener('click', () => {
+  $('queuePanel').classList.add('hidden');
+  if(currentOpenedListId) openList(currentOpenedListId);
+});
+
+function renderQueueStep(){
+  const box = $('queueContact');
+  if(queueIndex >= queueContacts.length){
+    $('queueProgress').textContent = '';
+    box.innerHTML = '<div class="empty">Fila concluída — todos os contatos pendentes foram abertos. 🎉</div>';
+    return;
+  }
+  const c = queueContacts[queueIndex];
+  $('queueProgress').textContent = `${queueIndex + 1} de ${queueContacts.length} pendentes`;
+  const template = $('listTemplate').value;
+  const msg = messageFor(template, c.name);
+  box.innerHTML = `
+    <div class="queue-name">${escapeHtml(c.name) || '(sem nome)'}</div>
+    <div class="queue-phone">${formatDisplay(c.digits)}</div>
+    ${msg ? `<div class="queue-msg">${escapeHtml(msg)}</div>` : ''}
+    <div class="queue-actions">
+      <button class="btn-primary" id="qOpen">Abrir no WhatsApp</button>
+      <button class="btn-ghost" id="qSkip">Pular</button>
+      <button class="btn-ghost" id="qNoWhats">Sem WhatsApp</button>
+    </div>
+  `;
+  $('qOpen').addEventListener('click', async () => {
+    window.open(buildLink(c.digits, msg), '_blank', 'noopener,noreferrer');
+    await updateContactStatusDb(c.id, 'contatado');
+    advanceQueue();
+  });
+  $('qSkip').addEventListener('click', advanceQueue);
+  $('qNoWhats').addEventListener('click', async () => {
+    await updateContactStatusDb(c.id, 'sem_whatsapp');
+    advanceQueue();
+  });
+}
+function advanceQueue(){ queueIndex++; renderQueueStep(); }
+</script>
+</body>
+</html>
