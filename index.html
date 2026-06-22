@@ -302,12 +302,28 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 /* ============ AUTH ============ */
 
 let currentUser = null;
-let cameFromAuthLink = window.location.hash.includes('access_token');
+let needsPasswordSet = false;
+
+// Detecta se veio de link de convite ou recuperação de senha
+const hashParams = new URLSearchParams(window.location.hash.replace('#', '?'));
+const urlType = hashParams.get('type'); // 'invite' ou 'recovery'
+if(urlType === 'invite' || urlType === 'recovery'){
+  needsPasswordSet = true;
+  // Limpa o hash da URL pra não ficar exposto
+  history.replaceState(null, '', window.location.pathname);
+}
 
 function traduzErroAuth(msg){
   if(/invalid login credentials/i.test(msg)) return 'E-mail ou senha incorretos.';
   if(/email not confirmed/i.test(msg)) return 'Confirme o convite recebido por e-mail antes de entrar.';
   return msg;
+}
+
+function showSetPassword(){
+  $('authView').classList.remove('hidden');
+  $('appView').classList.add('hidden');
+  $('loginForm').classList.add('hidden');
+  $('setPasswordForm').classList.remove('hidden');
 }
 
 function enterApp(user){
@@ -350,27 +366,33 @@ $('setPassBtn').addEventListener('click', async () => {
   if(pass.length < 6){ $('setPassError').textContent = 'Mínimo 6 caracteres.'; return; }
   const { error } = await sb.auth.updateUser({ password: pass });
   if(error){ $('setPassError').textContent = error.message; return; }
+  needsPasswordSet = false;
   const { data: { user } } = await sb.auth.getUser();
   enterApp(user);
 });
 
 $('logoutBtn').addEventListener('click', async () => {
   await sb.auth.signOut();
+  needsPasswordSet = false;
   backToAuth();
 });
 
 sb.auth.onAuthStateChange((event, session) => {
-  if(session && session.user && cameFromAuthLink){
-    cameFromAuthLink = false;
-    $('loginForm').classList.add('hidden');
-    $('setPasswordForm').classList.remove('hidden');
+  if((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session?.user){
+    if(needsPasswordSet){
+      showSetPassword();
+    }
   }
 });
 
 (async function bootAuth(){
   const { data: { session } } = await sb.auth.getSession();
-  if(session && session.user && !cameFromAuthLink){
-    enterApp(session.user);
+  if(session && session.user){
+    if(needsPasswordSet){
+      showSetPassword();
+    } else {
+      enterApp(session.user);
+    }
   }
 })();
 
