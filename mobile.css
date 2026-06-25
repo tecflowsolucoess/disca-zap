@@ -1,0 +1,157 @@
+/* ===========================================
+   DISCA ZAP - MOBILE
+   =========================================== */
+
+@media screen and (max-width:768px){
+
+*{
+    box-sizing:border-box;
+}
+
+html,
+body{
+    width:100%;
+    overflow-x:hidden;
+    font-size:15px;
+    padding:0;
+    margin:0;
+}
+
+body{
+    padding:12px;
+}
+
+/* containers */
+
+.container,
+.wrapper,
+.content,
+.main,
+.page{
+    width:100% !important;
+    max-width:100% !important;
+    margin:0 auto !important;
+    padding:0 !important;
+}
+
+/* grids */
+
+.grid,
+.lists-grid{
+    display:grid !important;
+    grid-template-columns:1fr !important;
+    gap:14px !important;
+}
+
+/* cards */
+
+.card{
+    width:100% !important;
+    margin:0 !important;
+}
+
+/* flex */
+
+.actions,
+.queue-actions,
+.save-row,
+.toolbar,
+.filters,
+.header-actions,
+.buttons{
+    display:flex !important;
+    flex-direction:column !important;
+    gap:10px !important;
+}
+
+/* botões */
+
+button,
+.btn,
+.actions button,
+.queue-actions button{
+    width:100% !important;
+    min-height:48px;
+}
+
+/* formulários */
+
+input,
+textarea,
+select{
+    width:100% !important;
+    max-width:100% !important;
+}
+
+/* labels */
+
+label{
+    display:block;
+    margin-bottom:5px;
+}
+
+/* tabelas */
+
+table{
+    display:block;
+    overflow-x:auto;
+    width:100%;
+    white-space:nowrap;
+}
+
+thead{
+    position:sticky;
+    top:0;
+}
+
+/* imagens */
+
+img{
+    max-width:100%;
+    height:auto;
+}
+
+/* títulos */
+
+h1{
+    font-size:22px !important;
+}
+
+h2{
+    font-size:19px !important;
+}
+
+h3{
+    font-size:17px !important;
+}
+
+/* espaçamento */
+
+section{
+    margin-bottom:18px;
+}
+
+/* modais */
+
+.modal,
+.dialog{
+    width:95% !important;
+    max-width:95% !important;
+    margin:auto !important;
+}
+
+/* evita elementos largos */
+
+iframe,
+canvas,
+video{
+    max-width:100%;
+}
+
+/* scrollbar */
+
+::-webkit-scrollbar{
+    width:4px;
+}
+
+}
